@@ -1,6 +1,10 @@
 import express from "express";
 import cors from 'cors';
 import mysql from 'mysql2';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 const app = express();
 
@@ -13,14 +17,23 @@ const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
     port: "32769",
-    password: "",
+    password: process.env.db_password,
     database: 'arukereso_tabletek'
 }).promise();
 
 app.get('/tabletek', async (req, res) => {
-
+    let temp;
     try {
-        const temp = await db.query('SELECT * FROM tabletek');
+        //skibidi
+        if (req.query.firstId || req.query.lastId) {
+            let firstId = parseInt(req.query.firstId);
+            let lastId = parseInt(req.query.lastId);
+            temp = await db.query('SELECT * FROM tabletek limit ?,?', [firstId - 1, lastId])
+            console.log(firstId, lastId)
+        }
+        else{
+            temp = await db.query('SELECT * FROM tabletek');
+        }
         const rows = temp[0];
         const fields = temp[1];
         res.status(200).json(rows);
@@ -58,7 +71,7 @@ app.post('/tabletek', async (req, res) => {
     }
 })
 
-app.delete( '/tabletek/:id', async (req, res) => {
+app.delete('/tabletek/:id', async (req, res) => {
 
     try {
         const temp = await db.query('Delete FROM tabletek where id = ?', [req.params.id]);
